@@ -1,19 +1,32 @@
 import random
 import covid19_data
 import datetime
+import asyncio
 import json
 import discord
 import requests
 from discord.ext import commands
+import pprint
+import requests
+from time import sleep
+import time
+from discord.ext.commands import ConversionError
 
 bot = commands.Bot(command_prefix = "!")
 
 URL = 'https://en.wikipedia.org/wiki/Template:COVID-19_pandemic_data'
 
+
+
+
+
 @bot.event
 async def on_ready():
     print("Bot is on ready state")
 
+@bot.event
+async def on_member_join(ctx, member):
+    await ctx.send('f{member} has joined the server!')
 
 @bot.command(pass_context = True)
 async def join(ctx):
@@ -55,6 +68,26 @@ async def covid19(ctx):
     await msg.delete()
 
 @bot.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def news(ctx):
+    secret = 'f558a322e478455d80ae71fd77f010ed'
+    url = 'https://newsapi.org/v2/everything?'
+    parameters = {
+        'q': 'big data',  # query phrase
+        'pageSize': 5,  # maximum is 100
+        'apiKey': secret  # your own API key
+    }
+
+    response = requests.get(url, params=parameters)
+    response_json = response.json()
+    for i in response_json['articles']:
+        await ctx.send("Fetching news...")
+        time.sleep(3)
+        await ctx.send(i['url'])
+        time.sleep(3)
+
+@bot.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def bitcoin(ctx):
     url='https://api.coindesk.com/v1/bpi/currentprice/BTC.json'
     response = requests.get(url)
@@ -75,13 +108,73 @@ async def trivia(ctx):
     rand_question = questions[random.randrange(len(questions))]
     await ctx.send(rand_question)
 
+
 @bot.command()
+@commands.has_role('Admin')
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def clear(ctx, amount = 100):
     await ctx.channel.purge(limit = amount)
 
+@clear.error
+async def clear_error(ctx, error):
+    if isinstance(error, (commands.MissingRole, commands.MissingAnyRole)):
+        await ctx.send("Not an administrator")
+    elif isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
+@news.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def news_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
+@bitcoin.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def bitcoin_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
+@clear.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def clear_error_countdown(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
 @bot.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def ping(ctx):
     await ctx.send(f"Pong! Your ping is {round(bot.latency * 1000)}ms")
 
 
-bot.run('NzE1MDM4NjIyNzQyNDc4OTAw.Xs3Zqg.ztPGkNLpYYZyLubJpy7HCU6s2fM')
+@ping.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def ping_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
+bot.run('NzE1MDM4NjIyNzQyNDc4OTAw.XtMI6A.SpIT0wsj4ekrEP1m_C_vi7ECw6U')
