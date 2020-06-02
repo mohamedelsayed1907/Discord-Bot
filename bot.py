@@ -95,18 +95,13 @@ async def bitcoin(ctx):
     await ctx.send("Bitcoin rate is: " + value)
 
 @bot.command()
-async def trivia(ctx):
-    counter = 0
-    questions = [
-        "Who won the UEFA Champions League 2019?",
-        "Who won the soccer Ballon D'or 2019?",
-        "Who won the NBA 2019?",
-        "Who won the English Premier League last year?",
-        "What is the first country to have Coronavirus?"
-    ]
-    answers = ["Liverpool", "Messi", "Toronto Raptors", "Manchester City", "China"]
-    rand_question = questions[random.randrange(len(questions))]
-    await ctx.send(rand_question)
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def weather(ctx, arg):
+    api_address1 = 'http://api.openweathermap.org/data/2.5/weather?appid=76e1446acf585085831958f9e00784fb&q='
+    url = api_address1 + arg
+    json_data = requests.get(url).json()
+    formatted_data = json_data['weather'][0]['main']
+    await ctx.send("The weather in " + arg + " is: " + formatted_data)
 
 
 @bot.command()
@@ -120,6 +115,17 @@ async def clear_error(ctx, error):
     if isinstance(error, (commands.MissingRole, commands.MissingAnyRole)):
         await ctx.send("Not an administrator")
     elif isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
+
+@weather.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def weather_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
         msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
         msg2 = await ctx.send(msg)
         await asyncio.sleep(2.5)
@@ -177,4 +183,4 @@ async def ping_error(ctx, error):
     else:
         raise error
 
-bot.run('NzE1MDM4NjIyNzQyNDc4OTAw.XtMI6A.SpIT0wsj4ekrEP1m_C_vi7ECw6U')
+bot.run('TOKEN')
