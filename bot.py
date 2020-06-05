@@ -18,8 +18,6 @@ URL = 'https://en.wikipedia.org/wiki/Template:COVID-19_pandemic_data'
 
 
 
-
-
 @bot.event
 async def on_ready():
     print("Bot is on ready state")
@@ -109,6 +107,28 @@ async def weather(ctx, arg):
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def clear(ctx, amount = 100):
     await ctx.channel.purge(limit = amount)
+
+@bot.command()
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def guess(ctx, arg):
+    numbers = random.randint(1, 16)
+    if arg == "":
+        await ctx.send("!guess [number]. Example: !guess 15. Range is from 1 to 15! Good luck")
+    elif int(arg) == numbers:
+        await ctx.send("Correct guess!")
+    else:
+        await ctx.send("Incorrect. Try again")
+
+@guess.error
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def guess_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        msg = 'This command is ratelimited, please try again in {:.2f}s'.format(error.retry_after)
+        msg2 = await ctx.send(msg)
+        await asyncio.sleep(2.5)
+        await msg2.delete()
+    else:
+        raise error
 
 @clear.error
 async def clear_error(ctx, error):
